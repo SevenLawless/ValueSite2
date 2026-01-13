@@ -72,6 +72,14 @@ window.updateCertificateConfig = function(config) {
     });
 };
 
+// Expose function to get current configuration (for verification)
+window.getCertificateConfig = function() {
+    return JSON.parse(JSON.stringify(window.CERTIFICATE_CONFIG));
+};
+
+// Log configuration on load to verify it's set correctly
+console.log('Certificate Configuration Loaded:', window.CERTIFICATE_CONFIG);
+
 // Expose generateCertificate function globally for preview.html
 window.generateCertificate = function(fullName, className, signature, pictureDataURL, templateSrc, htmlRoot, displayCallback) {
     const canvas = document.createElement('canvas');
@@ -93,6 +101,16 @@ window.generateCertificate = function(fullName, className, signature, pictureDat
         const config = pictureDataURL ? 
             window.CERTIFICATE_CONFIG.withPicture : 
             window.CERTIFICATE_CONFIG.withoutPicture;
+
+        // Log configuration being used for verification
+        console.log('Certificate Configuration:', {
+            hasPicture: !!pictureDataURL,
+            configType: pictureDataURL ? 'withPicture' : 'withoutPicture',
+            name: config.name,
+            class: config.class,
+            signature: config.signature,
+            picture: config.picture || 'N/A'
+        });
 
         // Add Name (RIGHT-ALIGNED - starts from fixed right position, grows left)
         // Arabic text will automatically render RTL, and with textAlign='right',
@@ -161,6 +179,15 @@ window.generateCertificate = function(fullName, className, signature, pictureDat
         const config = pictureDataURL ? 
             window.CERTIFICATE_CONFIG.withPicture : 
             window.CERTIFICATE_CONFIG.withoutPicture;
+
+        // Log configuration being used for verification (error fallback)
+        console.log('Certificate Configuration (fallback):', {
+            hasPicture: !!pictureDataURL,
+            configType: pictureDataURL ? 'withPicture' : 'withoutPicture',
+            name: config.name,
+            class: config.class,
+            signature: config.signature
+        });
 
         // Arabic text will automatically render RTL, and with textAlign='right',
         // text starts at the X position and extends leftward as it grows
@@ -521,61 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500); // 500ms delay to show processing animation
     });
 
-    // Apply crop button
-    document.getElementById('applyCrop').addEventListener('click', () => {
-        if (!cropper) return;
-        
-        // Show loading effect
-        const cropBtn = document.getElementById('applyCrop');
-        cropBtn.textContent = 'جاري التطبيق...';
-        cropBtn.disabled = true;
-        
-        // Get cropped canvas
-        const canvas = cropper.getCroppedCanvas({
-            width: 480,  // 4:3 rectangular dimensions
-            height: 360, // 4:3 rectangular dimensions
-            imageSmoothingEnabled: true,
-            imageSmoothingQuality: 'high',
-        });
-        
-        // Convert to data URL
-        croppedImageDataURL = canvas.toDataURL('image/jpeg', 0.9); // 90% quality
-        
-        // Hide modal with fade-out effect
-        cropperModal.style.opacity = '0';
-        setTimeout(() => {
-            cropperModal.style.display = 'none';
-            cropBtn.textContent = 'تطبيق';
-            cropBtn.disabled = false;
-        }, 300);
-        
-        // Show preview of cropped image with animation - without success message
-        const previewContainer = document.createElement('div');
-        previewContainer.className = 'cropped-preview';
-        previewContainer.innerHTML = `
-            <img src="${croppedImageDataURL}" alt="Cropped image preview">
-        `;
-        
-        // Replace any existing preview
-        const existingPreview = document.querySelector('.cropped-preview');
-        if (existingPreview) {
-            existingPreview.parentNode.removeChild(existingPreview);
-        }
-        
-        // Add preview right after file input
-        pictureInput.parentNode.appendChild(previewContainer);
-        
-        // Add animation to show success
-        setTimeout(() => {
-            const previewImg = previewContainer.querySelector('img');
-            if (previewImg) {
-                previewImg.style.transform = 'scale(1.1)';
-                setTimeout(() => {
-                    previewImg.style.transform = 'scale(1)';
-                }, 200);
-            }
-        }, 10);
-    });
+    // Duplicate event listener removed - using the enhanced version above
 
     // Cancel crop button
     document.getElementById('cancelCrop').addEventListener('click', () => {
