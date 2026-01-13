@@ -101,63 +101,9 @@
         </div>
     </div>
 
+    <!-- Load script.js to use shared certificate generation functions -->
+    <script src="script.js"></script>
     <script>
-        // Same certificate configuration as main site
-        const CERTIFICATE_CONFIG = {
-            withPicture: {
-                picture: {
-                    x: 805,
-                    y: 758,
-                    radius: 265,
-                    scale: 1
-                },
-                name: {
-                    x: 800,
-                    y: 1115,
-                    fontSize: 100,
-                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                    color: '#ffffff'
-                },
-                class: {
-                    x: 730,//man
-                    y: 1230,
-                    fontSize: 80,
-                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                    color: '#894700'
-                },
-                signature: {
-                    x: 500,
-                    y: 1580,
-                    fontSize: 100,
-                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                    color: '#894700'
-                }
-            },
-            withoutPicture: {
-                name: {
-                    x: 1120,
-                    y: 980,
-                    fontSize: 145,
-                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                    color: '#2f2838'
-                },
-                class: {
-                    x: 400,
-                    y: 1160,
-                    fontSize: 80,
-                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                    color: '#894700'
-                },
-                signature: {
-                    x: 820,
-                    y: 1740,
-                    fontSize: 80,
-                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                    color: '#ffffff'
-                }
-            }
-        };
-
         // Sample profile picture (placeholder)
         const samplePictureDataURL = 'data:image/svg+xml;base64,' + btoa(`
             <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -168,7 +114,19 @@
             </svg>
         `);
 
+        function displayCertificate(canvas) {
+            const container = document.getElementById('certificateContainer');
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        }
+
         function generatePreview() {
+            // Wait for script.js to load if it hasn't already
+            if (typeof window.generateCertificate === 'undefined') {
+                setTimeout(generatePreview, 100);
+                return;
+            }
+
             const name = document.getElementById('testName').value;
             const className = document.getElementById('testClass').value;
             const signature = document.getElementById('testSignature').value;
@@ -177,116 +135,8 @@
             const templateSrc = withPicture ? 'templates/with-certificate.jpg' : 'templates/without-certificate.jpg';
             const pictureDataURL = withPicture ? samplePictureDataURL : null;
             
-            generateCertificate(name, className, signature, pictureDataURL, templateSrc);
-        }
-
-        function generateCertificate(fullName, className, signature, pictureDataURL, templateSrc) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            const img = new Image();
-            img.onload = function() {
-                canvas.width = 1600;
-                canvas.height = 2000;
-                
-                // Draw background template
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                ctx.textAlign = 'center';
-                
-                // Select configuration based on picture presence
-                const config = pictureDataURL ? 
-                    CERTIFICATE_CONFIG.withPicture : 
-                    CERTIFICATE_CONFIG.withoutPicture;
-
-                // Add Name (CENTER-ALIGNED)
-                ctx.font = `900 ${config.name.fontSize}px ${config.name.fontFamily}`;
-                ctx.fillStyle = config.name.color;
-                ctx.textAlign = 'center';
-                ctx.fillText(fullName, config.name.x, config.name.y);
-
-                // Add Class (RIGHT-ALIGNED)
-                ctx.font = `900 ${config.class.fontSize}px ${config.class.fontFamily}`;
-                ctx.fillStyle = config.class.color;
-                ctx.textAlign = 'right';
-                ctx.fillText(className, config.class.x, config.class.y);
-
-                // Add Signature (RIGHT-ALIGNED)
-                ctx.font = `900 ${config.signature.fontSize}px ${config.signature.fontFamily}`;
-                ctx.fillStyle = config.signature.color;
-                ctx.textAlign = 'right';
-                ctx.fillText(signature, config.signature.x, config.signature.y);
-
-                // Add Circular Profile Picture if present
-                if (pictureDataURL) {
-                    const picture = new Image();
-                    picture.onload = function() {
-                        // Create circular clipping path
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.arc(config.picture.x, config.picture.y, config.picture.radius, 0, 2 * Math.PI);
-                        ctx.closePath();
-                        ctx.clip();
-
-                        // Draw picture
-                        const scale = config.picture.scale * 
-                            Math.max(
-                                (config.picture.radius * 2) / picture.width, 
-                                (config.picture.radius * 2) / picture.height
-                            );
-                        const scaledWidth = picture.width * scale;
-                        const scaledHeight = picture.height * scale;
-                        const offsetX = config.picture.x - scaledWidth / 2;
-                        const offsetY = config.picture.y - scaledHeight / 2;
-
-                        ctx.drawImage(picture, offsetX, offsetY, scaledWidth, scaledHeight);
-                        ctx.restore();
-
-                        displayCertificate(canvas);
-                    };
-                    picture.src = pictureDataURL;
-                } else {
-                    displayCertificate(canvas);
-                }
-            };
-            
-            img.onerror = function() {
-                // Create placeholder if template missing
-                canvas.width = 1600;
-                canvas.height = 2000;
-                ctx.fillStyle = '#f0f0f0';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Continue with text rendering without template
-                const config = pictureDataURL ? 
-                    CERTIFICATE_CONFIG.withPicture : 
-                    CERTIFICATE_CONFIG.withoutPicture;
-
-                ctx.font = `900 ${config.name.fontSize}px ${config.name.fontFamily}`;
-                ctx.fillStyle = config.name.color;
-                ctx.textAlign = 'center';
-                ctx.fillText(fullName, config.name.x, config.name.y);
-
-                ctx.font = `900 ${config.class.fontSize}px ${config.class.fontFamily}`;
-                ctx.fillStyle = config.class.color;
-                ctx.textAlign = 'right';
-                ctx.fillText(className, config.class.x, config.class.y);
-
-                ctx.font = `900 ${config.signature.fontSize}px ${config.signature.fontFamily}`;
-                ctx.fillStyle = config.signature.color;
-                ctx.textAlign = 'right';
-                ctx.fillText(signature, config.signature.x, config.signature.y);
-
-                displayCertificate(canvas);
-            };
-            
-            img.src = templateSrc;
-        }
-
-        function displayCertificate(canvas) {
-            const container = document.getElementById('certificateContainer');
-            container.innerHTML = '';
-            container.appendChild(canvas);
+            // Use the shared generateCertificate function from script.js
+            window.generateCertificate(name, className, signature, pictureDataURL, templateSrc, null, displayCertificate);
         }
 
         function downloadPreview() {

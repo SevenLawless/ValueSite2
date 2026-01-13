@@ -1,76 +1,192 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // CUSTOMIZATION CONFIGURATION
-    // Separate configurations for certificates with and without pictures
-    const CERTIFICATE_CONFIG = {
+// CUSTOMIZATION CONFIGURATION
+// Separate configurations for certificates with and without pictures
+// Exposed globally so preview.html can use it
+window.CERTIFICATE_CONFIG = {
         withPicture: {
             // Picture placement (x, y, width, height)
             picture: {
-                x: 805,      // Horizontal center position
-                y: 758,      // Vertical center position
-                radius: 265, // Height of rectangular crop (4:3 aspect ratio)
-                scale: 1     // Scale factor for picture size
+                x: 3085,      // Horizontal center position
+                y: 1045,      // Vertical center position
+                radius: 320, // Height of rectangular crop (4:3 aspect ratio)
+                scale: 2     // Scale factor for picture size
             },
             // Name placement (x, y, font settings)
             name: {
-                x: 800,      // Horizontal center position
-                y: 1115,     // Vertical position
-                fontSize: 100,// Font size
+                x: 1999,      // Horizontal center position
+                y: 1325,     // Vertical position
+                fontSize: 150,// Font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
-                color: '#ffffff' // Name color
+                color: '#212121' // Name color
             },
             // Class placement (x, y, font settings)
             class: {
-                x: 730,      // Horizontal center position
-                y: 1230,     // Vertical position (between name and signature)
-                fontSize: 80,// Font size
+                x: 2100,      // Horizontal center position
+                y: 1525,     // Vertical position (between name and signature)
+                fontSize: 150,// Font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
-                color: '#894700' // Text color
+                color: '#212121' // Text color
             },
             // Signature placement (x, y, font settings)
             signature: {
-                x: 500,      // Always Start at x position == 760px
-                y: 1580,     // Vertical position
-                fontSize: 100,// Font size
+                x: 2980,      // Always Start at x position == 760px
+                y: 1945,     // Vertical position
+                fontSize: 130,// Font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
-                color: '#894700' // Red text color
+                color: '#212121' // Red text color
             }
         },
         withoutPicture: {
             // Separate configuration for certificates without pictures
             name: {
-                x: 1120,      // Horizontal center position
-                y: 980,      // Vertical position
-                fontSize: 145,// Larger font size
+                x: 1999,      // Horizontal center position
+                y: 1325,      // Vertical position
+                fontSize: 150,// Larger font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
-                color: '#2f2838' // Name color
+                color: '#212121' // Name color
             },
             // Class placement (x, y, font settings)
             class: {
-                x: 400,      // Horizontal center position
-                y: 1160,     // Vertical position (between name and signature)
-                fontSize: 80,// Font size
+                x: 2100,      // Horizontal center position
+                y: 1525,     // Vertical position (between name and signature)
+                fontSize: 150,// Font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
-                color: '#894700' // Text color
+                color: '#212121' // Text color
             },
             // Signature placement (x, y, font settings)
             signature: {
-                x: 820,      // Fixed horizontal position
-                y: 1740,     // Vertical position
-                fontSize: 80,// Slightly larger font size
+                x: 2980,      // Fixed horizontal position
+                y: 1945,     // Vertical position
+                fontSize: 130,// Slightly larger font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
-                color: '#ffffff' // Red text color
+                color: '#212121' // Red text color
             }
         }
     };
 
-    // Expose configuration for external modification
-    window.updateCertificateConfig = function(config) {
-        Object.keys(config).forEach(key => {
-            if (CERTIFICATE_CONFIG[key]) {
-                Object.assign(CERTIFICATE_CONFIG[key], config[key]);
+// Expose configuration for external modification
+window.updateCertificateConfig = function(config) {
+    Object.keys(config).forEach(key => {
+        if (window.CERTIFICATE_CONFIG[key]) {
+            Object.assign(window.CERTIFICATE_CONFIG[key], config[key]);
+        }
+    });
+};
+
+// Expose generateCertificate function globally for preview.html
+window.generateCertificate = function(fullName, className, signature, pictureDataURL, templateSrc, htmlRoot, displayCallback) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const img = new Image();
+    img.onload = function() {
+        canvas.width = 3579;
+        canvas.height = 2551;
+        
+        // Draw background template
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Determine text direction and font
+        const isArabic = htmlRoot ? htmlRoot.getAttribute('dir') === 'rtl' : true;
+        ctx.textAlign = 'center';
+        
+        // Select configuration based on picture presence
+        const config = pictureDataURL ? 
+            window.CERTIFICATE_CONFIG.withPicture : 
+            window.CERTIFICATE_CONFIG.withoutPicture;
+
+        // Add Name (RIGHT-ALIGNED - starts from fixed right position, grows left)
+        // Arabic text will automatically render RTL, and with textAlign='right',
+        // text starts at the X position and extends leftward as it grows
+        ctx.font = `900 ${config.name.fontSize}px ${config.name.fontFamily}`;
+        ctx.fillStyle = config.name.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(fullName, config.name.x, config.name.y);
+
+        // Add Class (RIGHT-ALIGNED - starts from fixed right position, grows left)
+        ctx.font = `900 ${config.class.fontSize}px ${config.class.fontFamily}`;
+        ctx.fillStyle = config.class.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(className, config.class.x, config.class.y);
+
+        // Add Signature (RIGHT-ALIGNED - starts from fixed right position, grows left)
+        ctx.font = `900 ${config.signature.fontSize}px ${config.signature.fontFamily}`;
+        ctx.fillStyle = config.signature.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(signature, config.signature.x, config.signature.y);
+
+        // Add Circular Profile Picture if present
+        if (pictureDataURL) {
+            const picture = new Image();
+            picture.onload = function() {
+                // Create circular clipping path
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(config.picture.x, config.picture.y, config.picture.radius, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.clip();
+
+                // Draw picture
+                const scale = config.picture.scale * 
+                    Math.max(
+                        (config.picture.radius * 2) / picture.width, 
+                        (config.picture.radius * 2) / picture.height
+                    );
+                const scaledWidth = picture.width * scale;
+                const scaledHeight = picture.height * scale;
+                const offsetX = config.picture.x - scaledWidth / 2;
+                const offsetY = config.picture.y - scaledHeight / 2;
+
+                ctx.drawImage(picture, offsetX, offsetY, scaledWidth, scaledHeight);
+                ctx.restore();
+
+                if (displayCallback) {
+                    displayCallback(canvas);
+                }
+            };
+            picture.src = pictureDataURL;
+        } else {
+            if (displayCallback) {
+                displayCallback(canvas);
             }
-        });
+        }
     };
+    img.onerror = function() {
+        // Create placeholder if template missing
+        canvas.width = 3579;
+        canvas.height = 2551;
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Continue with text rendering without template
+        const config = pictureDataURL ? 
+            window.CERTIFICATE_CONFIG.withPicture : 
+            window.CERTIFICATE_CONFIG.withoutPicture;
+
+        // Arabic text will automatically render RTL, and with textAlign='right',
+        // text starts at the X position and extends leftward as it grows
+        ctx.font = `900 ${config.name.fontSize}px ${config.name.fontFamily}`;
+        ctx.fillStyle = config.name.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(fullName, config.name.x, config.name.y);
+
+        ctx.font = `900 ${config.class.fontSize}px ${config.class.fontFamily}`;
+        ctx.fillStyle = config.class.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(className, config.class.x, config.class.y);
+
+        ctx.font = `900 ${config.signature.fontSize}px ${config.signature.fontFamily}`;
+        ctx.fillStyle = config.signature.color;
+        ctx.textAlign = 'right';
+        ctx.fillText(signature, config.signature.x, config.signature.y);
+
+        if (displayCallback) {
+            displayCallback(canvas);
+        }
+    };
+    img.src = templateSrc || 'https://via.placeholder.com/3579x2551.png?text=Certificate+Template';
+};
+
+document.addEventListener('DOMContentLoaded', () => {
 
     const form = document.getElementById('certificateForm');
     const includePictureCheckbox = document.getElementById('includePicture');
@@ -80,6 +196,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadCertificateBtn = document.getElementById('downloadCertificate');
     const languageToggle = document.querySelector('.language-toggle');
     const htmlRoot = document.getElementById('htmlRoot');
+
+    // Check if required elements exist
+    if (!form) {
+        console.error('Certificate form not found!');
+        return;
+    }
+    if (!certificateContainer) {
+        console.error('Certificate container not found!');
+        return;
+    }
+    if (!certificatePreview) {
+        console.error('Certificate preview not found!');
+        return;
+    }
 
     // Create image cropper elements - improved UI
     const cropperModal = document.createElement('div');
@@ -474,16 +604,24 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
-        // Track certificate generation with Google Analytics
-        gtag('event', 'generate_certificate', {
-            'event_category': 'Certificate',
-            'event_label': 'Certss'
-        });
+        // Track certificate generation with Google Analytics (if available)
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'generate_certificate', {
+                'event_category': 'Certificate',
+                'event_label': 'Certss'
+            });
+        }
 
         const fullName = document.getElementById('fullName').value;
         const className = document.getElementById('className').value;
         const signature = document.getElementById('signature').value;
         let pictureDataURL = null;
+
+        // Validate required fields
+        if (!fullName || !className || !signature) {
+            alert('يرجى ملء جميع الحقول المطلوبة');
+            return;
+        }
 
         // Select Certificate Template (gender-neutral templates)
         const selectTemplate = (hasPicture) => {
@@ -495,96 +633,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (croppedImageDataURL) {
                 // Use the cropped image if available
                 pictureDataURL = croppedImageDataURL;
-                generateCertificate(fullName, className, signature, pictureDataURL, selectTemplate(true));
+                generateCertificateLocal(fullName, className, signature, pictureDataURL, selectTemplate(true));
             } else if (pictureInput.files.length > 0) {
                 // Fallback to original image if no cropped version
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     pictureDataURL = event.target.result;
-                    generateCertificate(fullName, className, signature, pictureDataURL, selectTemplate(true));
+                    generateCertificateLocal(fullName, className, signature, pictureDataURL, selectTemplate(true));
                 };
                 reader.readAsDataURL(pictureInput.files[0]);
             } else {
                 // No image provided
-                generateCertificate(fullName, className, signature, null, selectTemplate(false));
+                generateCertificateLocal(fullName, className, signature, null, selectTemplate(false));
             }
         } else {
-            generateCertificate(fullName, className, signature, null, selectTemplate(false));
+            generateCertificateLocal(fullName, className, signature, null, selectTemplate(false));
         }
     });
 
-    function generateCertificate(fullName, className, signature, pictureDataURL, templateSrc) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-
-        const img = new Image();
-        img.onload = function() {
-            canvas.width = 1600;
-            canvas.height = 2000;
-            
-            // Draw background template
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            // Determine text direction and font
-            const isArabic = htmlRoot.getAttribute('dir') === 'rtl';
-            ctx.textAlign = 'center';
-            
-            // Select configuration based on picture presence
-            const config = pictureDataURL ? 
-                CERTIFICATE_CONFIG.withPicture : 
-                CERTIFICATE_CONFIG.withoutPicture;
-
-            // Add Name (CENTER-ALIGNED)
-            ctx.font = `900 ${config.name.fontSize}px ${config.name.fontFamily}`;
-            ctx.fillStyle = config.name.color;
-            ctx.textAlign = 'center';
-            ctx.fillText(fullName, config.name.x, config.name.y);
-
-            // Add Class (RIGHT-ALIGNED)
-            ctx.font = `900 ${config.class.fontSize}px ${config.class.fontFamily}`;
-            ctx.fillStyle = config.class.color;
-            ctx.textAlign = 'right';
-            ctx.fillText(className, config.class.x, config.class.y);
-
-            // Add Signature (RIGHT-ALIGNED)
-            ctx.font = `900 ${config.signature.fontSize}px ${config.signature.fontFamily}`;
-            ctx.fillStyle = config.signature.color;
-            ctx.textAlign = 'right';
-            ctx.fillText(signature, config.signature.x, config.signature.y);
-
-            // Add Circular Profile Picture if present
-            if (pictureDataURL) {
-                const picture = new Image();
-                picture.onload = function() {
-                    // Create circular clipping path
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(config.picture.x, config.picture.y, config.picture.radius, 0, 2 * Math.PI);
-                    ctx.closePath();
-                    ctx.clip();
-
-                    // Draw picture
-                    const scale = config.picture.scale * 
-                        Math.max(
-                            (config.picture.radius * 2) / picture.width, 
-                            (config.picture.radius * 2) / picture.height
-                        );
-                    const scaledWidth = picture.width * scale;
-                    const scaledHeight = picture.height * scale;
-                    const offsetX = config.picture.x - scaledWidth / 2;
-                    const offsetY = config.picture.y - scaledHeight / 2;
-
-                    ctx.drawImage(picture, offsetX, offsetY, scaledWidth, scaledHeight);
-                    ctx.restore();
-
-                    displayCertificate(canvas);
-                };
-                picture.src = pictureDataURL;
-            } else {
-                displayCertificate(canvas);
-            }
-        };
-        img.src = templateSrc || 'https://via.placeholder.com/1600x2000.png?text=Certificate+Template';
+    function generateCertificateLocal(fullName, className, signature, pictureDataURL, templateSrc) {
+        console.log('Generating certificate with:', { fullName, className, signature, hasPicture: !!pictureDataURL, templateSrc });
+        
+        if (typeof window.generateCertificate === 'undefined') {
+            console.error('window.generateCertificate is not defined!');
+            alert('خطأ في تحميل وظائف الشهادة. يرجى تحديث الصفحة.');
+            return;
+        }
+        
+        window.generateCertificate(fullName, className, signature, pictureDataURL, templateSrc, htmlRoot, displayCertificate);
     }
 
     function displayCertificate(canvas) {
