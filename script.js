@@ -8,11 +8,11 @@ window.CERTIFICATE_CONFIG = {
                 x: 3085,      // Horizontal center position
                 y: 1045,      // Vertical center position
                 radius: 320, // Height of rectangular crop (4:3 aspect ratio)
-                scale: 2     // Scale factor for picture size
+                scale: 1.1     // Scale factor for picture size
             },
             // Name placement (x, y, font settings)
             name: {
-                x: 1999,      // Horizontal center position
+                x: 2100,      // Horizontal center position
                 y: 1325,     // Vertical position
                 fontSize: 150,// Font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
@@ -29,7 +29,7 @@ window.CERTIFICATE_CONFIG = {
             // Signature placement (x, y, font settings)
             signature: {
                 x: 2980,      // Always Start at x position == 760px
-                y: 1945,     // Vertical position
+                y: 1910,     // Vertical position
                 fontSize: 130,// Font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
                 color: '#212121' // Red text color
@@ -38,7 +38,7 @@ window.CERTIFICATE_CONFIG = {
         withoutPicture: {
             // Separate configuration for certificates without pictures
             name: {
-                x: 1999,      // Horizontal center position
+                x: 2100,      // Horizontal center position
                 y: 1325,      // Vertical position
                 fontSize: 150,// Larger font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
@@ -55,7 +55,7 @@ window.CERTIFICATE_CONFIG = {
             // Signature placement (x, y, font settings)
             signature: {
                 x: 2980,      // Fixed horizontal position
-                y: 1945,     // Vertical position
+                y: 1910,     // Vertical position
                 fontSize: 130,// Slightly larger font size
                 fontFamily: '"Segoe UI", Arial, sans-serif', // Font family
                 color: '#212121' // Red text color
